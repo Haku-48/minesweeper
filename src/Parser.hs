@@ -138,6 +138,7 @@ parseCommand = parseDiscover <|> parseFlag <|> parseUnflag <|> parseNewGame <|> 
 data Difficulty = Easy 
                   | Medium
                   | Hard 
+            deriving (Show, Enum, Bounded, Eq)
 
 -- Parser to parse the difficulty
 parseDifficulty :: Parser Difficulty
