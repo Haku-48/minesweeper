@@ -10,7 +10,7 @@ executable minesweeper
     build-depends :
         base >= 4.14 && <5,
         random,
-        brick,
+        brick >= 1.6 && < 1.10,
         vty
     ghc-options :
         -threaded

@@ -11,3 +11,4 @@ main :: IO ()
 --    putStr "Thanks for playing !!!\n"
 main = 
     defaultMain app (GameCreation Easy) >> return ()
+

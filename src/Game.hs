@@ -59,6 +59,11 @@ chooseDifficulty = do
     return dif
 
 -- Create a new Game 
+createGameWithDiff :: Difficulty -> StdGen -> Game 
+createGameWithDiff Easy gen   = G (generateGrid 8 8 8 gen) Playing Easy
+createGameWithDiff Medium gen = G (generateGrid 10 9 15 gen) Playing Medium
+createGameWithDiff Hard gen   = G (generateGrid 14 9 27 gen) Playing Hard
+
 createGame :: IO Game
 createGame = do 
     gen  <- getStdGen
