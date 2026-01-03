@@ -90,11 +90,11 @@ setAllNumber (x:xs) grid = setAllNumber xs grid'
         grid' = (setNumber x (numberOfBombsInNeigh x grid) grid)
 
 -- Method to generate a random Grid
-generateGrid :: Int -> Int -> Int -> StdGen -> Grid 
-generateGrid i j n gen = setAllNumber pos 
+generateGrid :: Int -> Int -> Int -> StdGen -> (Grid,StdGen) 
+generateGrid i j n gen = (setAllNumber pos 
                         $ placeBombs n gen pos 
-                        $ emptyGrid i j
-    where (pos,_) = randomList gen i j
+                        $ emptyGrid i j, gen')
+    where (pos,gen') = randomList gen i j
 
 -- Methods to discover a Pos
 discoverInRow :: Int -> [Cell] -> [Cell]

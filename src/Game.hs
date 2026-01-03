@@ -59,21 +59,16 @@ chooseDifficulty = do
     return dif
 
 -- Create a new Game 
-createGameWithDiff :: Difficulty -> StdGen -> Game 
-createGameWithDiff Easy gen   = G (generateGrid 8 8 8 gen) Playing Easy
-createGameWithDiff Medium gen = G (generateGrid 10 9 15 gen) Playing Medium
-createGameWithDiff Hard gen   = G (generateGrid 14 9 27 gen) Playing Hard
+createGameWithDiff :: Difficulty -> StdGen -> (Game,StdGen) 
+createGameWithDiff Easy gen   = let (grid,gen') = generateGrid 8 8 8 gen in (G grid Playing Easy,gen')
+createGameWithDiff Medium gen = let (grid,gen') = generateGrid 10 9 15 gen in (G grid Playing Medium,gen')
+createGameWithDiff Hard gen   = let (grid,gen') = generateGrid 14 9 27 gen in (G grid Playing Hard,gen')
 
-createGame :: IO Game
-createGame = do 
-    gen  <- getStdGen
-    _    <- putStrLn "Welcome in Minesweeper"
-    dif  <- chooseDifficulty
-    game <- case dif of 
-            Easy       -> return $ G (generateGrid 8 8 8 gen) Playing Easy
-            Medium     -> return $ G (generateGrid 10 9 15 gen) Playing Medium 
-            Hard       -> return $ G (generateGrid 14 9 27 gen) Playing Hard
-    return game
+createGame :: StdGen -> IO (Game,StdGen)
+createGame gen = do 
+    _           <- putStrLn "Welcome in Minesweeper"
+    dif         <- chooseDifficulty
+    return (createGameWithDiff dif gen)
 
 -- Method to show every command
 showCommands :: IO ()
@@ -81,18 +76,18 @@ showCommands = putStrLn "Every Commands -> :discover [x] [y]; :flag [x] [y]; :un
 
 
 -- Method that represent a round in the game 
-playRound :: Game -> IO ()
-playRound (G grid Won _)        = do 
-    _       <- putStrLn (showGrid grid)
-    _       <- putStr "You won this game ! Congratulation ! Starting new game...\n"
-    newGame <- createGame
-    playRound newGame 
-playRound (G grid Lost _)       = do
-    _       <- putStrLn (showGrid grid) 
-    _       <- putStr "You lost this game ! Starting new game...\n"
-    newGame <- createGame
-    playRound newGame 
-playRound g@(G grid Playing _)  = do 
+playRound :: Game -> StdGen -> IO ()
+playRound (G grid Won _) gen       = do 
+    _              <- putStrLn (showGrid grid)
+    _              <- putStr "You won this game ! Congratulation ! Starting new game...\n"
+    (newGame,gen') <- createGame gen
+    playRound newGame gen'
+playRound (G grid Lost _) gen      = do
+    _              <- putStrLn (showGrid grid) 
+    _              <- putStr "You lost this game ! Starting new game...\n"
+    (newGame,gen') <- createGame gen
+    playRound newGame gen'
+playRound g@(G grid Playing _) gen = do 
     _       <- putStrLn (showGrid grid) 
     _       <- showCommands
     _       <- putStr "Command > "
@@ -102,20 +97,20 @@ playRound g@(G grid Playing _)  = do
                 Just c    -> case c of 
                              Quit    -> return ()
                              NewGame -> do 
-                                        game <- createGame
-                                        playRound game 
+                                        (newGame,gen') <- createGame gen
+                                        playRound newGame gen'
                              e       -> do 
                                         game <- case runGameCommand e g of 
                                                 Right g'@(G grid' _ d) -> case allDiscovered grid' of 
-                                                                         True  -> playRound (G grid' Won d)
-                                                                         False -> playRound g'
+                                                                         True  -> playRound (G grid' Won d) gen
+                                                                         False -> playRound g' gen
                                                 Left err               -> do 
                                                                          _ <- putStrLn ("Error : " ++ err)
-                                                                         playRound g
+                                                                         playRound g gen
                                         return ()
                               
                 Nothing   -> do 
                             putStr "Error while parsing command\n"
-                            playRound g 
+                            playRound g gen
     return ()
     

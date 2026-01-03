@@ -24,9 +24,9 @@ import Control.Monad.IO.Class (liftIO)
 import Graphics.Vty 
 
 -- data for the UI State
-data UIState = GameCreation Difficulty
-               | InGame Game Position FlagMod Message
-               | EndGame Grid Message
+data UIState = GameCreation Difficulty StdGen
+               | InGame Game Position FlagMod Message StdGen
+               | EndGame Grid Message StdGen
 
 -- data to represent the flagMod of a Game
 data FlagMod = ON | OFF
@@ -54,15 +54,15 @@ data UIButton = EasyButton
 
 -- Method to draw the app
 drawUi :: UIState -> [Widget ()]
-drawUi st@(GameCreation diff)= 
+drawUi st@(GameCreation diff _)= 
      [ C.center $
       vBox
         [ C.hCenter $ border $ str "Minesweeper"
         , padTopBottom 1 $ C.center $ hBox (map (drawDifficultyButton diff) [Easy, Medium, Hard])
         ]
     ]
-drawUi st@(InGame (G grid _ _) pos fm mess) = [C.center $ padRight (Pad 2) $ vBox [drawGrid grid pos,drawMessage mess] <+> drawFlagMod fm]
-drawUi st@(EndGame grid mess)  = [C.center $ 
+drawUi st@(InGame (G grid _ _) pos fm mess _) = [C.center $ padRight (Pad 2) $ vBox [drawGrid grid pos,drawMessage mess] <+> drawFlagMod fm]
+drawUi st@(EndGame grid mess _)  = [C.center $ 
                                     vBox 
                                         [ C.hCenter $ padBottom (Pad 2) $ border $ str "EndGame"
                                         , C.center $  vBox [C.hCenter $ drawGrid grid (-1,-1),C.center $ drawMessage mess]]]
@@ -168,42 +168,41 @@ theMap = attrMap defAttr
 -- Method to handle event 
 handleEvent ::  BrickEvent () () -> EventM () UIState ()
 handleEvent (VtyEvent (EvKey key [])) = do 
-    st <- get 
-    gen <- getStdGen 
+    st <- get
     case st of 
-        (GameCreation diff) -> case key of 
-                               KLeft  ->  put $ GameCreation (prevDifficulty diff)
-                               KRight ->  put $ GameCreation (nextDifficulty diff) 
-                               KEnter ->  put $ InGame (createGameWithDiff diff gen) (0,0) OFF ""
+        (GameCreation diff gen) -> case key of 
+                               KLeft  ->  put $ GameCreation (prevDifficulty diff) gen
+                               KRight ->  put $ GameCreation (nextDifficulty diff) gen
+                               KEnter ->  put $ (let (game,gen') = createGameWithDiff diff gen in InGame (game) (0,0) OFF "" gen')
                                KEsc   ->  halt  
                                _      ->  return ()
-        (InGame game@(G grid state diff) pos fm mess) -> case key of 
-                                                 KLeft      -> put $ InGame game (leftPosition pos grid) fm mess
-                                                 KRight     -> put $ InGame game (rightPosition pos grid) fm mess
-                                                 KUp        -> put $ InGame game (topPosition pos grid) fm mess
-                                                 KDown      -> put $ InGame game (bottomPosition pos grid) fm mess
-                                                 KChar 'f'  -> put $ InGame game pos (if fm == ON then OFF else ON) mess
+        (InGame game@(G grid state diff) pos fm mess gen) -> case key of 
+                                                 KLeft      -> put $ InGame game (leftPosition pos grid) fm mess gen
+                                                 KRight     -> put $ InGame game (rightPosition pos grid) fm mess gen
+                                                 KUp        -> put $ InGame game (topPosition pos grid) fm mess gen
+                                                 KDown      -> put $ InGame game (bottomPosition pos grid) fm mess gen
+                                                 KChar 'f'  -> put $ InGame game pos (if fm == ON then OFF else ON) mess gen
 
-                                                 KChar 'e'  -> put $ EndGame grid "Test"
+                                                 --KChar 'e'  -> put $ EndGame grid "Test"
 
-                                                 KEsc       -> put $ GameCreation Easy 
+                                                 KEsc       -> put $ GameCreation Easy gen
                                                  KEnter     -> case fm of 
                                                                 ON  -> case getPosition pos grid of 
                                                                         (C _ Flagged) -> case unflagPosition pos game of 
-                                                                                            Right game' -> put $ InGame game' pos fm ""
-                                                                                            Left err    -> put $ InGame game pos fm err 
+                                                                                            Right game' -> put $ InGame game' pos fm "" gen
+                                                                                            Left err    -> put $ InGame game pos fm err gen
                                                                         _             -> case flagPosition pos game of 
-                                                                                            Right game' -> put $ InGame game' pos fm "" 
-                                                                                            Left err    -> put $ InGame game pos fm err 
+                                                                                            Right game' -> put $ InGame game' pos fm "" gen
+                                                                                            Left err    -> put $ InGame game pos fm err gen
                                                                 OFF -> case discoverPosition pos game of 
-                                                                        Right (G grid' Lost _)              -> put $ EndGame (flagBomb grid') "You lost this game...\nPress Enter to continue or Escape to stop !"
+                                                                        Right (G grid' Lost _)              -> put $ EndGame (flagBomb grid') "You lost this game...\nPress Enter to continue or Escape to stop !" gen
                                                                         Right game'@(G grid' Playing _)     -> case allDiscovered grid' of 
-                                                                                                                True    -> put $ EndGame (flagBomb grid') "You won this game !\nPress Enter to continue or Escape to stop !"
-                                                                                                                False   -> put $ InGame game' pos fm ""
-                                                                        Left err                           -> put $ InGame game pos fm err
+                                                                                                                True    -> put $ EndGame (flagBomb grid') "You won this game !\nPress Enter to continue or Escape to stop !" gen
+                                                                                                                False   -> put $ InGame game' pos fm "" gen
+                                                                        Left err                           -> put $ InGame game pos fm err gen
                                                  _          -> return ()
-        (EndGame grid mess) -> case key of 
-                                KEnter   -> put $ GameCreation Easy
+        (EndGame grid mess gen) -> case key of 
+                                KEnter   -> put $ GameCreation Easy gen
                                 KEsc     -> halt 
                                 _        -> return ()
 handleEvent _ = return ()
