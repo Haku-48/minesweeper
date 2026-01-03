@@ -196,9 +196,9 @@ handleEvent (VtyEvent (EvKey key [])) = do
                                                                                             Right game' -> put $ InGame game' pos fm "" 
                                                                                             Left err    -> put $ InGame game pos fm err 
                                                                 OFF -> case discoverPosition pos game of 
-                                                                        Right (G grid' Lost _)              -> put $ EndGame grid' "You lost this game...\nPress Enter to continue or Escape to stop !"
+                                                                        Right (G grid' Lost _)              -> put $ EndGame (flagBomb grid') "You lost this game...\nPress Enter to continue or Escape to stop !"
                                                                         Right game'@(G grid' Playing _)     -> case allDiscovered grid' of 
-                                                                                                                True    -> put $ EndGame grid' "You won this game !\nPress Enter to continue or Escape to stop !"
+                                                                                                                True    -> put $ EndGame (flagBomb grid') "You won this game !\nPress Enter to continue or Escape to stop !"
                                                                                                                 False   -> put $ InGame game' pos fm ""
                                                                         Left err                           -> put $ InGame game pos fm err
                                                  _          -> return ()
