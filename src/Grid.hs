@@ -153,7 +153,7 @@ allDiscovered ((x:xs):gs) = case x of
                             C (Empty _) Hidden -> False
                             _                  -> allDiscovered (xs:gs) 
 
--- Flag all the bombs cell at the end 
+-- Flag all the bombs cell at the end when the player won
 flagBombInRow :: [Cell] -> [Cell]
 flagBombInRow []                   = []
 flagBombInRow ((C Bomb Hidden):ls) = (C Bomb Flagged): flagBombInRow ls 
@@ -162,4 +162,14 @@ flagBombInRow (c:ls)               = c : flagBombInRow ls
 flagBomb :: Grid -> Grid 
 flagBomb []     = []
 flagBomb (l:ls) = flagBombInRow l : flagBomb ls 
+
+-- Discover all the bombs cell at the end when the player lost
+discBombInRow :: [Cell] -> [Cell]
+discBombInRow []              = []
+discBombInRow ((C Bomb _):ls) = (C Bomb Discovered): discBombInRow ls 
+discBombInRow (c:ls)          = c :discBombInRow ls
+
+discBombs :: Grid -> Grid 
+discBombs []     = []
+discBombs (l:ls) = discBombInRow l : discBombs ls 
 

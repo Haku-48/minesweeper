@@ -44,14 +44,6 @@ app = App { appDraw = drawUi
           , appAttrMap = const theMap
           }
 
--- data for differents buttons
-data UIButton = EasyButton
-              | MediumButton
-              | HardButton
-              | ContinueButton
-              | QuitButton
-    deriving (Show,Eq,Ord)
-
 -- Method to draw the app
 drawUi :: UIState -> [Widget ()]
 drawUi st@(GameCreation diff _)= 
@@ -195,7 +187,7 @@ handleEvent (VtyEvent (EvKey key [])) = do
                                                                                             Right game' -> put $ InGame game' pos fm "" gen
                                                                                             Left err    -> put $ InGame game pos fm err gen
                                                                 OFF -> case discoverPosition pos game of 
-                                                                        Right (G grid' Lost _)              -> put $ EndGame (flagBomb grid') "You lost this game...\nPress Enter to continue or Escape to stop !" gen
+                                                                        Right (G grid' Lost _)              -> put $ EndGame (discBombs grid') "You lost this game...\nPress Enter to continue or Escape to stop !" gen
                                                                         Right game'@(G grid' Playing _)     -> case allDiscovered grid' of 
                                                                                                                 True    -> put $ EndGame (flagBomb grid') "You won this game !\nPress Enter to continue or Escape to stop !" gen
                                                                                                                 False   -> put $ InGame game' pos fm "" gen

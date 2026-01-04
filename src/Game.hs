@@ -78,12 +78,12 @@ showCommands = putStrLn "Every Commands -> :discover [x] [y]; :flag [x] [y]; :un
 -- Method that represent a round in the game 
 playRound :: Game -> StdGen -> IO ()
 playRound (G grid Won _) gen       = do 
-    _              <- putStrLn (showGrid grid)
+    _              <- putStrLn (showGrid $ flagBomb grid)
     _              <- putStr "You won this game ! Congratulation ! Starting new game...\n"
     (newGame,gen') <- createGame gen
     playRound newGame gen'
 playRound (G grid Lost _) gen      = do
-    _              <- putStrLn (showGrid grid) 
+    _              <- putStrLn (showGrid $ discBombs grid) 
     _              <- putStr "You lost this game ! Starting new game...\n"
     (newGame,gen') <- createGame gen
     playRound newGame gen'
